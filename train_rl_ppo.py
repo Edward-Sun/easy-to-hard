@@ -46,6 +46,13 @@ from hf_argparser import HfArgumentParser
 from arguments import Arguments as TrainingArguments
 from checkpoint_utils import get_latest_checkpoint_path
 
+from math_utils.math_rl_utils import (
+    post_process_math_rollouts,
+    post_process_math_prm_scores,
+    math_stop_token_penalty,
+    shape_math_process_rewards,
+)
+
 logger = logging.getLogger(__name__)
 
 
@@ -119,6 +126,10 @@ def main(args: TrainingArguments):
         **data_module,
         **model_module,
         tokenizer=tokenizer,
+        fn_shape_process_rewards=shape_math_process_rewards,
+        fn_post_process_prm_rewards=post_process_math_prm_scores,
+        fn_post_process_rollouts=post_process_math_rollouts,
+        fn_stop_token_penalty=math_stop_token_penalty,
     )
 
     trainer.train(

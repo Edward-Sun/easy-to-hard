@@ -40,11 +40,11 @@ from models.tp import (
     get_data_parallel_rank,
     get_data_parallel_world_size,
 )
-from models.tokenizer_utils import (
-    AcceleraTokenizer,
+from data_utils.tokenizer_utils import (
+    FakePreTrainedTokenizer,
     batch_encode_tokens,
 )
-from checkpoint_utils import (
+from training_utils.checkpoint_hook import (
     get_latest_checkpoint_path,
     load_inference_checkpoint,
 )
@@ -180,7 +180,7 @@ def main(
     torch.cuda.synchronize()
     print(f"Time to load model: {time.time() - t0:.02f} seconds")
 
-    tokenizer = AcceleraTokenizer(tokenizer=tokenizer_path)
+    tokenizer = FakePreTrainedTokenizer(tokenizer=tokenizer_path)
 
     torch.manual_seed(1234)
     model_size = sum(
@@ -303,9 +303,46 @@ def main(
         assert y.size(0) == len(batched_prompts)
         assert y.size(1) == prompt_length
 
+        inputs = encoded.tolist()
         outputs = y.tolist()
 
-        print(outputs[0])
+        num_double_newlines = [_["full_seq"].count("\n\n") for _ in batched_prompts]
+        # tokenizer.encode("\n\n") = [13, 13]
+        num_tokenized_double_newlines = [
+            (", ".join(str(_) for _ in encoded_full_seq) + ",").count(" 13, 13,")
+            for encoded_full_seq in inputs
+        ]
+        assert len(num_double_newlines) == len(num_tokenized_double_newlines), (
+            num_double_newlines,
+            num_tokenized_double_newlines,
+        )
+
+        for i in range(len(num_double_newlines)):
+            assert num_double_newlines[i] == num_tokenized_double_newlines[i], (
+                num_double_newlines[i],
+                num_tokenized_double_newlines[i],
+                batched_prompts[i],
+            )
+
+        all_outputs = [_["output"] for _ in batched_prompts]
+        all_prompts = [_["prompt"] for _ in batched_prompts]
+
+        packed_post_process = [
+            post_process_newline_scores(
+                inputs[i],
+                outputs[i],
+                all_prompts[i],
+                all_outputs[i],
+                process_reward_with_answer,
+            )
+            for i in range(len(outputs))
+        ]
+
+        new_line_scores = [_[0] for _ in packed_post_process]
+        beautiful_outputs = [_[1] for _ in packed_post_process]
+
+        print(beautiful_outputs[0])
+        print()
 
         # torch.cuda.synchronize()
         t = time.perf_counter() - t0
@@ -321,7 +358,7 @@ def main(
         if tp_rank == 0:
             fcntl.flock(output_writer, fcntl.LOCK_EX)
             try:
-                for prompt, score in zip(batched_prompts, outputs):
+                for prompt, score in zip(batched_prompts, new_line_scores):
                     output_writer.write(
                         json.dumps(
                             {
@@ -337,6 +374,83 @@ def main(
                 output_writer.flush()
             finally:
                 fcntl.flock(output_writer, fcntl.LOCK_UN)
+
+
+def post_process_newline_scores(
+    encoded_full_seq, scores, prompt, output, process_reward_with_answer
+):
+    encoded_full_seq = [_ for _ in encoded_full_seq if _ != 0]
+    encoded_full_seq_string = ", ".join(str(_) for _ in encoded_full_seq) + ","
+
+    prompt_newlines = prompt.count("\n\n")
+    output_newlines = output.split("# Answer")[0].count("\n\n")
+    full_seq_newlines = encoded_full_seq_string.count(" 13, 13,")
+
+    # we get scores at the position from the end of the prompt
+    # to the end of the output
+
+    assert prompt.endswith("\n\n")
+    assert prompt_newlines + output_newlines <= full_seq_newlines
+
+    encoded_prompt_string = (
+        " 13, 13,".join(encoded_full_seq_string.split(" 13, 13,", prompt_newlines)[:-1])
+        + " 13, 13"
+    )
+    prompt_seq_len = len(encoded_prompt_string.split(","))
+    encoded_output_string = encoded_full_seq_string.split(" 13, 13,", prompt_newlines)[
+        -1
+    ]
+    splitted_encoded_full_seq_string = [
+        _.strip() for _ in encoded_full_seq_string.split(",") if _.strip()
+    ]
+
+    newline_scores = []
+    beautiful_output = [prompt.strip()]
+    pos = prompt_seq_len
+
+    for i, encoded_segment, segment in zip(
+        range(output_newlines + 2),
+        encoded_output_string.split(" 13, 13,"),
+        output.split("\n\n"),
+    ):
+        pos += len([_.strip() for _ in encoded_segment.split(",") if _.strip()]) + 2
+        if i < output_newlines - 1 and pos <= len(scores):
+            assert splitted_encoded_full_seq_string[pos - 1] == "13"
+            assert splitted_encoded_full_seq_string[pos - 2] == "13"
+            newline_scores.append(scores[pos - 2])
+            beautiful_output.append(
+                segment + f" ({scores[pos - 3]},{scores[pos - 2]},{scores[pos - 1]})"
+            )
+        elif i == output_newlines - 1:
+            assert splitted_encoded_full_seq_string[pos - 1] == "13"
+            assert splitted_encoded_full_seq_string[pos - 2] == "13"
+            if process_reward_with_answer:
+                beautiful_output.append(segment)
+            else:
+                newline_scores.append(scores[pos - 2])
+                beautiful_output.append(
+                    segment
+                    + f" ({scores[pos - 3]},{scores[pos - 2]},{scores[pos - 1]})"
+                )
+        elif i == output_newlines:
+            if pos <= len(splitted_encoded_full_seq_string):
+                assert splitted_encoded_full_seq_string[pos - 1] == "13"
+                assert splitted_encoded_full_seq_string[pos - 2] == "13"
+            beautiful_output.append(segment)
+        elif i == output_newlines + 1:
+            if process_reward_with_answer:
+                if splitted_encoded_full_seq_string[pos - 3] == "2":
+                    newline_scores.append(scores[pos - 4])
+                    beautiful_output.append(segment + f" ({scores[pos - 4]})")
+                else:
+                    newline_scores.append(-5.0)
+                    beautiful_output.append(segment + f" (Broken)")
+            else:
+                beautiful_output.append(segment)
+        else:
+            raise NotImplementedError
+
+    return newline_scores, "\n\n".join(beautiful_output)
 
 
 if __name__ == "__main__":

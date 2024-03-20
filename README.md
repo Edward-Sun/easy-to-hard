@@ -1,3 +1,40 @@
+# Easy-to-Hard Generalization
+
+Easy-to-Hard Generalization: Scalable Alignment Beyond Human Supervision
+
+## Downloading pre-tuned PRM800K / MetaMath models
+
+We provide model checkpoints for the supervised fine-tuned models and reward models. The current list of models includes:
+
+- SFT models:
+
+  - [`llemma-7b-sft-prm800k-level-1to3-hf`](https://huggingface.co/ScalableMath/llemma-7b-sft-prm800k-level-1to3-hf)
+  - [`llemma-7b-sft-metamath-level-1to3-hf`](https://huggingface.co/ScalableMath/llemma-7b-sft-metamath-level-1to3-hf)
+
+- Reward models:
+
+  - [`llemma-7b-oprm-prm800k-level-1to3-hf`](https://huggingface.co/ScalableMath/llemma-7b-oprm-prm800k-level-1to3-hf)
+  - [`llemma-7b-prm-prm800k-level-1to3-hf`](https://huggingface.co/ScalableMath/llemma-7b-prm-prm800k-level-1to3-hf)
+  - [`llemma-7b-orm-prm800k-level-1to3-hf`](https://huggingface.co/ScalableMath/llemma-7b-orm-prm800k-level-1to3-hf)
+  - [`llemma-7b-prm-metamath-level-1to3-hf`](https://huggingface.co/ScalableMath/llemma-7b-prm-metamath-level-1to3-hf)
+
+## Reproduction
+
+Please check the [examples](/examples/) for more details.
+
+### Citation
+
+```
+@article{sun2024easy,
+  title={Easy-to-Hard Generalization: Scalable Alignment Beyond Human Supervision},
+  author={Sun, Zhiqing and Yu, Longhui and Shen, Yikang and Liu, Weiyang and Yang, Yiming and Welleck, Sean and Gan, Chuang},
+  journal={arXiv preprint arXiv:2403.09472},
+  year={2024}
+}
+```
+
+#### Below is copied from the Gpt-Accelera GitHub repository in 2024-03-19
+
 # gpt-accelera
 
 Simple and efficient pytorch-native transformer training and inference (batched).
