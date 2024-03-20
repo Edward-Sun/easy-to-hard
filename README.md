@@ -2,13 +2,16 @@
 
 # Easy-to-Hard Generalization
 
-Easy-to-Hard Generalization: Scalable Alignment Beyond Human Supervision
+### Easy-to-Hard Generalization: Scalable Alignment Beyond Human Supervision
+
+</div>
+
+Guided by the observation that *evaluation is easier than generation*, we enabled large language models to excel on hard math problems beyond human evaluation capabilities through the easy-to-hard generalization of evaluators (e.g., process reward models). For comprehensive details and insights, we kindly direct you to our [paper](https://arxiv.org/abs/2403.09472).
 
 <div align="center">
     <img src="assets/easy_to_hard_fig.jpg" alt="Easy-to-Hard Logo" width="512px">
 </div>
 
-</div>
 <!-- <div align="center">
     <img src="assets/comparison_fig.jpg" alt="Easy-to-Hard Logo" width="512px">
 </div> -->
