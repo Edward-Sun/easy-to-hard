@@ -1,18 +1,17 @@
 <div align="center">
-    <img src="assets/easy_to_hard_fig.jpg" alt="Easy-to-Hard Logo" width="256px">
-</div>
-
-<div align="center">
 
 # Easy-to-Hard Generalization
 
-</div>
-
 <div align="center">
-    <img src="assets/comparison_fig.jpg" alt="Easy-to-Hard Logo" width="512px">
+    <img src="assets/easy_to_hard_fig.jpg" alt="Easy-to-Hard Logo" width="512px">
 </div>
 
 Easy-to-Hard Generalization: Scalable Alignment Beyond Human Supervision
+
+</div>
+<!-- <div align="center">
+    <img src="assets/comparison_fig.jpg" alt="Easy-to-Hard Logo" width="512px">
+</div> -->
 
 ## Downloading pre-tuned PRM800K / MetaMath models
 
