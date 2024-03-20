@@ -20,9 +20,11 @@ We provide model checkpoints for the supervised fine-tuned models and reward mod
 
 ## Reproduction
 
-Please check the [examples](/examples/) for more details.
+Please check the [examples](/examples/) for the training scripts and [data](/data/) for the data preparation.
 
 ### Citation
+
+Please consider citing our work if you use the data or code in this repo.
 
 ```
 @article{sun2024easy,
@@ -49,6 +51,7 @@ Featuring:
 - Supports training policy models with Supervised Fine-Tuning (SFT)
 - Supports training reward models (RM) with pointwise and pairwise losses
 - Supports on-policy (PPO) and off-policy (DPO) reinforcement learning (RL) training
+- All the training can be performed with full fine-tuning for `7b-34b LLaMA/Llemma` models
 
 Shared features w/ `gpt-fast`:
 
