@@ -152,7 +152,6 @@ torchrun --standalone --nproc_per_node=8 \
     --ref_policy_model_bits 8 \
     --reward_model_fsdp False \
     --reward_model_bits 8 \
-    --param_dtype fp32 \
     --optim_dtype fp32 \
     --tensor_parallel_size 4 \
     --fsdp_consolidate_cpu_offload True \
