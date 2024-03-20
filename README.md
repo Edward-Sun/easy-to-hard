@@ -2,11 +2,11 @@
 
 # Easy-to-Hard Generalization
 
+Easy-to-Hard Generalization: Scalable Alignment Beyond Human Supervision
+
 <div align="center">
     <img src="assets/easy_to_hard_fig.jpg" alt="Easy-to-Hard Logo" width="512px">
 </div>
-
-Easy-to-Hard Generalization: Scalable Alignment Beyond Human Supervision
 
 </div>
 <!-- <div align="center">
