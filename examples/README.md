@@ -26,7 +26,7 @@ SFT_TRAIN_DATA=/path/to/your/sft/train/data.json
 SFT_MODEL_SAVE_NAME=/path/to/your/sft/model/save/name
 
 torchrun --standalone --nproc_per_node=8 \
-    finetune.py \
+    train_sft.py \
     --do_train \
     --checkpoint_path $DATA_DIR/checkpoints/$MODEL_REPO/model.pth \
     --source_max_len 768 \
@@ -57,7 +57,7 @@ RM_DATA=/path/to/your/reward/model/data.json
 RM_MODEL_SAVE_NAME=/path/to/your/reward/model/save/name
 
 torchrun --standalone --nproc_per_node=8 \
-    finetune_rm.py \
+    train_rm_pointwise.py \
     --do_train \
     --checkpoint_path $DATA_DIR/checkpoints/$MODEL_REPO/model.pth \
     --source_max_len 1024 \
@@ -107,7 +107,7 @@ PPO_TEST_DATA=/path/to/your/ppo/test/data.json
 PPO_MODEL_SAVE_NAME=/path/to/your/ppo/model/save/name
 
 torchrun --standalone --nproc_per_node=8 \
-    finetune_ppo.py \
+    train_rl_ppo.py \
     --compile \
     --do_train \
     --base_checkpoint_path $DATA_DIR/checkpoints/$MODEL_REPO/model.pth \
