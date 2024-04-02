@@ -52,12 +52,16 @@ def main(
 
     levels = levels.split(", ")
 
+    print("Training questions from the original MATH", len(math_dataset["train"]))
+
     for ex in math_dataset["train"]:
         if f'Level {ex["level"]}' in levels:
             problem = ex["problem"]
             train_promblems.add(problem)
 
-    print(f"Number of MATH-easy train problems: {len(train_promblems)}")
+    print(
+        f"Number of MATH ({', '.join(levels)}) train problems: {len(train_promblems)}"
+    )
     print(f"Number of [asy] problems: {len(asy_promblems)}")
 
     additional_promblems = set()
@@ -108,7 +112,7 @@ def main(
 
         for step in ex["label"]["steps"]:
             if step["completions"] is None:
-                print(step)
+                # print(step)
                 break
 
             for completion in step["completions"]:

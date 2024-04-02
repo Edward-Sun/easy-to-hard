@@ -12,7 +12,6 @@ tokenizer = AutoTokenizer.from_pretrained("EleutherAI/llemma_34b")
 
 def main(
     output_path: str,
-    train_math_path: str,
     test_math_path: str,
     skip_unavailable: bool = False,
     question_format: str = "prm800k",
@@ -20,13 +19,7 @@ def main(
 ):
     math_dataset = {}
 
-    math_dataset["train"] = []
     math_dataset["test"] = []
-
-    with open(train_math_path) as f:
-        for line in f:
-            data = json.loads(line)
-            math_dataset["train"].append(data)
 
     with open(test_math_path) as f:
         for line in f:

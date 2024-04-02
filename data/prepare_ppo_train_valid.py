@@ -18,7 +18,6 @@ def main(
     valid_output_path: str,
     train_math_path: str,
     test_math_path: str,
-    valid_size: int = 500,
     skip_unavailable: bool = False,
     question_format: str = "prm800k",
     levels: str = "Level 1, Level 2, Level 3",
@@ -29,7 +28,7 @@ def main(
         "meta-math/MetaMathQA",
         cache_dir=os.path.join(
             tempfile.gettempdir(), f"{os.getuid()}_cache", "huggingface", "datasets"
-        )
+        ),
     )
 
     metamath_questions = set()
@@ -132,7 +131,10 @@ def main(
             subject = output["subject"]
             level = output["level"]
             # if num_list[level - 1] > 0 and output["input"] in original_test_set:
-            if count_subject_level[(subject, level)] > 0 and output["input"] in original_test_set:
+            if (
+                count_subject_level[(subject, level)] > 0
+                and output["input"] in original_test_set
+            ):
                 valid_outputs.append(output)
                 # num_list[level - 1] -= 1
                 count_subject_level[(subject, level)] -= 1
@@ -169,6 +171,7 @@ def main(
     print(f"Saving valid to {valid_output_path}")
 
     print("Over lengthed examples:", over_lengthed_examples)
+
 
 if __name__ == "__main__":
     fire.Fire(main)
