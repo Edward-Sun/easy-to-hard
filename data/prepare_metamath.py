@@ -37,12 +37,12 @@ def main(
     for item in ori_math:
         if item["level"] in levels:
             question_set.add(item["problem"])
+
+    #### remove gsm8k ####
     for item in metamath:
         if "MATH" in item["type"]:
             if item["original_question"] in question_set:
                 select_list.append(item)
-        else:
-            select_list.append(item)
 
     print("Original: ", len(metamath))
     print("Before pruning: ", len(select_list), f"x {epoch} epoches")
