@@ -40,8 +40,8 @@ from models.tp import (
     get_data_parallel_rank,
     get_data_parallel_world_size,
 )
-from data_utils.tokenizer_utils import (
-    FakePreTrainedTokenizer,
+from models.tokenizer_utils import (
+    AcceleraTokenizer,
     batch_encode_tokens,
 )
 from training_utils.checkpoint_hook import (
