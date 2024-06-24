@@ -180,7 +180,7 @@ def main(
     torch.cuda.synchronize()
     print(f"Time to load model: {time.time() - t0:.02f} seconds")
 
-    tokenizer = FakePreTrainedTokenizer(tokenizer=tokenizer_path)
+    tokenizer = AcceleraTokenizer(tokenizer=tokenizer_path)
 
     torch.manual_seed(1234)
     model_size = sum(
