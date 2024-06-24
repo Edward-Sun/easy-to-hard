@@ -44,7 +44,7 @@ from models.tokenizer_utils import (
     AcceleraTokenizer,
     batch_encode_tokens,
 )
-from training_utils.checkpoint_hook import (
+from checkpoint_utils import (
     get_latest_checkpoint_path,
     load_inference_checkpoint,
 )
