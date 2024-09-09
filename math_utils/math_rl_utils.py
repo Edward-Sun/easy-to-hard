@@ -166,13 +166,7 @@ def post_process_math_rollouts(
         easy_outcome_reward,
         device,
     )
-    return (
-        predicted_answers,
-        gt_answers,
-        levels,
-        symbolic_rewards,
-        outcome_metrics,
-    )
+    return outcome_metrics
 
 
 def _post_process_newline_scores(
