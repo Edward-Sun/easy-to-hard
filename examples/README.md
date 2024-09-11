@@ -130,8 +130,6 @@ torchrun --standalone --nproc_per_node=8 \
     --eval_dataset "$PPO_EVAL_DATA" \
     --test_dataset "$PPO_TEST_DATA" \
     --save_strategy steps \
-    --save_steps 5 \
-    --save_total_limit 1 \
     --save_dir $DATA_DIR/checkpoints/$PPO_MODEL_SAVE_NAME \
     --resume_from_checkpoint False \
     --stop_token "\n\n# Answer\n\n" \
@@ -159,8 +157,6 @@ torchrun --standalone --nproc_per_node=8 \
     --adam_eps 1e-5 \
     --weight_decay 0.0 \
     --eval_steps 10 \
-    --save_strategy "evaluate/accuracy_overall" \
-    --save_steps 5 \
     --save_steps 10 \
     --save_total_limit 5 \
     --save_only_model True \
