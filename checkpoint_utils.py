@@ -320,12 +320,10 @@ def load_inference_checkpoint(
         load_rank = get_model_parallel_rank()
         world_size = get_model_parallel_world_size()
 
-        if f"_rank_{load_rank}" not in checkpoint_path:
-            raise ValueError(
-                f"Invalid checkpoint path: {checkpoint_path} for rank {load_rank}"
-            )
-
-        pattern = checkpoint_path.replace(f"_rank_{load_rank}", "_rank_*")
+        if f"_rank_{load_rank}" in checkpoint_path:
+            pattern = checkpoint_path.replace(f"_rank_{load_rank}", "_rank_*")
+        else:
+            pattern = checkpoint_path
 
         ckpt_world_size = len(glob.glob(pattern))
         assert ckpt_world_size > 0, f"No checkpoint found: '{pattern}'"
@@ -359,9 +357,12 @@ def load_inference_checkpoint(
             split_factor = world_size // ckpt_world_size
             split_idx = load_rank % split_factor
             ckpt_file_path = pattern.replace("*", str(load_rank // split_factor))
-            full_state_dict = torch.load(ckpt_file_path, map_location="cpu", mmap=True)[
-                "model"
-            ]
+            if "model" in torch.load(ckpt_file_path, map_location="cpu", mmap=True):
+                full_state_dict = torch.load(ckpt_file_path, map_location="cpu", mmap=True)[
+                    "model"
+                ]
+            else:
+                full_state_dict = torch.load(ckpt_file_path, map_location="cpu", mmap=True)
             for key in full_state_dict:
                 full_state_dict[key] = full_state_dict[key].cpu()
             state_dict = split_tp_checkpoint(full_state_dict, split_factor, split_idx)
@@ -372,8 +373,19 @@ def load_inference_checkpoint(
 
     # remove size un-matching parameters
     model_state_dict = model.state_dict()
+
+    # If any of state in model starts with "backbone_model.", and the layers in checkpoint do not have it.
+    # It means we need to add "backbone_model." back to the checkpoint
+    if any([k.startswith("backbone_model.") for k in model_state_dict.keys()]) and all([not k.startswith("backbone_model.") for k in state_dict.keys()]):
+        state_dict = {f"backbone_model.{k}": v for k, v in state_dict.items()}
+
     for key in list(state_dict.keys()):
-        if model_state_dict[key].size() != state_dict[key].size():
+        if ("output.weight" in key and state_dict[key].size(0) != model_state_dict[key].size(0) and model_state_dict[key].size(0) == 2):
+            # When loading the reward model, we need to apply the reward modeling head
+            # 2 means the reward modeling head is a binary classifier
+            print("Applying reward modeling head to the loaded checkpoint ...")
+            state_dict[key] = state_dict[key][: model_state_dict[key].size(0)]
+        if key not in model_state_dict or model_state_dict[key].size() != state_dict[key].size():
             rank0_print("Warning: removing", key, "from checkpoint.")
             del state_dict[key]
 
@@ -672,17 +684,24 @@ def load_model_from_from_ckpt(
         )
 
     if not skip_init:
-        sft_checkpoint_path, _, _ = get_latest_checkpoint_path(sft_checkpoint_path)
-        if sft_checkpoint_path is not None:
+        if str(sft_checkpoint_path).endswith(".pth"):
             rank0_print(
-                f"Loading sft model from {sft_checkpoint_path.replace(f'_rank_0', '_rank_*')} ..."
+                f"Loading sft model from {str(sft_checkpoint_path)} ..."
             )
-            load_inference_checkpoint(sft_checkpoint_path, model)
+            load_inference_checkpoint(str(sft_checkpoint_path), model)
         else:
-            rank0_print(
-                "Warning: no sft checkpoint found, using base checkpoint."
-                " (OK for unwrapped policy / resuming training / train from scratch)."
-            )
+            print(sft_checkpoint_path)
+            sft_checkpoint_path, _, _ = get_latest_checkpoint_path(sft_checkpoint_path)
+            if sft_checkpoint_path is not None:
+                rank0_print(
+                    f"Loading sft model from {sft_checkpoint_path.replace(f'_rank_0', '_rank_*')} ..."
+                )
+                load_inference_checkpoint(sft_checkpoint_path, model)
+            else:
+                rank0_print(
+                    "Warning: no sft checkpoint found, using base checkpoint."
+                    " (OK for unwrapped policy / resuming training / train from scratch)."
+                )
 
     model.requires_grad_(requires_grad)
     model = model.to(device=device, dtype=precision)
@@ -732,15 +751,21 @@ def load_reward_model_from_ckpt(
         apply_reward_head_tp(model.backbone_model, requires_grad=requires_grad)
 
     if not skip_init:
-        rm_checkpoint_path, _, _ = get_latest_checkpoint_path(rm_checkpoint_path)
-        if rm_checkpoint_path is not None:
+        if str(rm_checkpoint_path).endswith(".pth"):
             rank0_print(
-                f"Loading reward model from {rm_checkpoint_path.replace(f'_rank_0', '_rank_*')} ..."
+                f"Loading reward model from {str(rm_checkpoint_path)} ..."
             )
-            load_inference_checkpoint(rm_checkpoint_path, model)
-            rank0_print("Reward head", model.backbone_model.output.weight)
+            load_inference_checkpoint(str(rm_checkpoint_path), model)
         else:
-            rank0_print("Warning: no rm checkpoint found, using base checkpoint.")
+            rm_checkpoint_path, _, _ = get_latest_checkpoint_path(rm_checkpoint_path)
+            if rm_checkpoint_path is not None:
+                rank0_print(
+                    f"Loading reward model from {rm_checkpoint_path.replace(f'_rank_0', '_rank_*')} ..."
+                )
+                load_inference_checkpoint(rm_checkpoint_path, model)
+                rank0_print("Reward head", model.backbone_model.output.weight)
+            else:
+                rank0_print("Warning: no rm checkpoint found, using base checkpoint.")
 
     model.requires_grad_(requires_grad)
     model = model.to(device=device, dtype=precision)
